@@ -102,37 +102,37 @@ void gencode_d(OGLFunctionFamily[] functionFamilies, OGLEnumGroup[] enums, strin
 
 			ret ~= prefixContainer;
 			ret ~= "\t///\n\t";
-			
+
 			if (grp.isBitmask) {
 				ret ~= prefixContainer;
 				ret ~= "@Bitmaskable\n\t";
 			}
-			
+
 			ret ~= prefixContainer;
 			ret ~= "enum ";
 			ret ~= grp.name;
 			ret ~= " {\n";
-			
+
 			size_t i;
 			foreach(e; grp.enums) {
 				if (e.value !is null) {
 					if (i > 0)
 						ret ~= ",\n";
-					
+
 					ret ~= prefix;
 					ret ~= "\t///\n\t";
-					
+
 					ret ~= prefix;
 					if (e.name.length > 3 && e.name[0 .. 3] == "GL_") {
 						ret ~= e.name[3 .. $].makeValidCIdentifier;
 					} else {
 						ret ~= e.name;
 					}
-					
+
 					ret ~= " = ";
 					if (e.value.length > 2 && e.value[0 .. 2] != "0x")
 						ret ~= "0x";
-					
+
 					ret ~= e.value;
 					i++;
 				}
@@ -187,7 +187,7 @@ void gencode_d(OGLFunctionFamily[] functionFamilies, OGLEnumGroup[] enums, strin
 				ret ~= func.returnType;
 				ret ~= " function(";
 				ret ~= argsSignature;
-				ret ~= ") @system @nogc nothrow;\n";
+				ret ~= ");\n";
 			}
 
 			if (i == 0) {
@@ -209,21 +209,24 @@ void gencode_d(OGLFunctionFamily[] functionFamilies, OGLEnumGroup[] enums, strin
 			if (func.introducedIn != OGLIntroducedIn.Unknown)
 				introducedIn = func.introducedIn;
 
-			if (introducedIn != OGLIntroducedIn.Unknown) {
-				ret ~= prefix;
-				ret ~= "@OpenGL_Version(OGLIntroducedIn.";
-				ret ~= introducedIn.text;
-				ret ~= ")\n";
-			} else {
-				ret ~= prefix;
-				ret ~= "@OpenGL_Version(OGLIntroducedIn.Unknown)\n";
-			}
+			// if wanted
+			if (false) {
+				if (introducedIn != OGLIntroducedIn.Unknown) {
+					ret ~= prefix;
+					ret ~= "@OpenGL_Version(OGLIntroducedIn.";
+					ret ~= introducedIn.text;
+					ret ~= ")\n";
+				} else {
+					ret ~= prefix;
+					ret ~= "@OpenGL_Version(OGLIntroducedIn.Unknown)\n";
+				}
 
-			if (func.introducedInExtension !is null) {
-				ret ~= prefix;
-				ret ~= "@OpenGL_Extension(\"";
-				ret ~= func.introducedInExtension;
-				ret ~= "\")\n";
+				if (func.introducedInExtension !is null) {
+					ret ~= prefix;
+					ret ~= "@OpenGL_Extension(\"";
+					ret ~= func.introducedInExtension;
+					ret ~= "\")\n";
+				}
 			}
 
 			ret ~= prefix;
@@ -253,7 +256,7 @@ void gencode_d(OGLFunctionFamily[] functionFamilies, OGLEnumGroup[] enums, strin
 	if (containerStruct !is null) {
 		ret ~= "}\n";
 	}
-	
+
 	import std.file : write;
 	write(filename, ret);
 }
@@ -269,14 +272,14 @@ void genDDOC(T)(ref T ret, OGLFunctionFamily family, string prefix) {
 	ret ~= "\n";
 	ret ~= prefix;
 	ret ~= "\n";
-	
+
 	ret ~= prefix;
 	ret.genDDOC(family.familyOfFunction, family.docs_description, prefix, prefix);
 	if (ret[$ - 1] != '\n')
 		ret ~= "\n";
 	ret ~= prefix;
 	ret ~= "\n";
-	
+
 	if (family.docs_notes.value_children.length > 0) {
 		ret ~= prefix;
 		ret.genDDOC(family.familyOfFunction, family.docs_notes, prefix, prefix);
@@ -285,7 +288,7 @@ void genDDOC(T)(ref T ret, OGLFunctionFamily family, string prefix) {
 		ret ~= prefix;
 		ret ~= "\n";
 	}
-	
+
 	if (ret.length >= prefix.length * 2 + 2
 			&& ret[$ - prefix.length - 1 .. $ - 1] == prefix
 			&& ret[$ - prefix.length * 2 - 2 .. $ - prefix.length - 2] == prefix)
@@ -371,7 +374,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 		string suffix;
 		string macroPrefix, htmlTag;
 		bool startCodeBlock = false;
-		
+
 		switch(type) {
 			case OGLDocumentationType.LookupParameter:
 				macroPrefix = "D_INLINECODE";
@@ -385,7 +388,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 			case OGLDocumentationType.Title:
 				htmlTag = "h3";
 				goto case OGLDocumentationType.Container;
-				
+
 			case OGLDocumentationType.TableContainer:
 				import std.conv : text;
 				suffix = "table>[cols=" ~ value_numcols.text ~ "]";
@@ -428,7 +431,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 			case OGLDocumentationType.InlineEquation:
 				suffix = "|<equation";
 				goto case OGLDocumentationType.Container;
-				
+
 			case OGLDocumentationType.MathMLContainer:
 				suffix = "MathML[_]";
 				goto case OGLDocumentationType.Container;
@@ -487,7 +490,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 			case OGLDocumentationType.IndexItem:
 				macroPrefix = "LI";
 				goto case OGLDocumentationType.Container;
-				
+
 			case OGLDocumentationType.Link:
 				macroPrefix = "LINK2 " ~ value_string ~ ",";
 				goto case OGLDocumentationType.Container;
@@ -497,10 +500,10 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 			case OGLDocumentationType.StyleSubScript:
 				htmlTag = "sub";
 				goto case OGLDocumentationType.Container;
-				
+
 			case OGLDocumentationType.Paragraph:
 				goto case OGLDocumentationType.Container;
-				
+
 			case OGLDocumentationType.Container:
 				if (startCodeBlock && ret.length >= 1 && ret[$ - 1] != '\n')
 					ret ~= "\n" ~ linetabs ~ "\n" ~ linetabs;
@@ -518,7 +521,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 					ret ~= htmlTag;
 					ret ~= ">";
 				}
-				
+
 				size_t codePos = ret.length;
 				foreach(i, child; value_children)
 					ret.genDDOC(functionFamily, child, linetabs, linetabsNext, firstText, startCodeBlock);
@@ -528,7 +531,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 						ret[i] = ret[i - 1];
 					ret[preMacroPos] = ' ';
 				}
-				
+
 				if (startCodeBlock) {
 					if (ret.length >= linetabs.length && ret[$ - linetabs.length .. $] == linetabs)
 						ret ~= "---\n" ~ linetabs;
@@ -548,7 +551,7 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 					ret ~= ">";
 				}
 				return;
-				
+
 			case OGLDocumentationType.Text:
 				if (inCode) {
 					foreach(line; value_string.splitLines(KeepTerminator.yes)) {
@@ -563,23 +566,23 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 				} else {
 					size_t i;
 					string lines = value_string;
-					
+
 					string linesOld = lines;
 					lines = lines
 						.replace("NULL", "null")
 						.replace("== null", "is null");
-					
+
 					foreach(line; lines.splitLines) {
 						string lineStripped = line.strip;
 						if (lineStripped.length > 0) {
 							if (!firstText && !(line[0] == '.' || line[0] == ',' || line[0] == ';')) {
 								ret ~= " ";
 							}
-							
+
 							ret ~= lineStripped;
 							i++;
 							firstText = false;
-							
+
 							if (linesOld != lines) {
 								ret ~= "\n" ~ linetabs;
 							}
@@ -597,12 +600,12 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 			case OGLDocumentationType.MathML_infinity:
 				ret ~= "&#8734;";
 				return;
-				
+
 			case OGLDocumentationType.Unknown:
 			default:
 				// DO NOTHING!!!!!
 				return;
-				
+
 		}
 	}
 }

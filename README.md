@@ -9,3 +9,8 @@ dub run ogl_gen -- --gen-d=<filename> --gen-d-module=<package.module> --load-cor
 Add ``--gen-d-wrapperName=<name>`` if you want it wrapped in a struct.
 
 Add ``--gen-d-static`` if you want a static binding, otherwise it will be dynamic.
+
+
+```
+dub run ogl_gen -- --gen-d=../../repos/deepen/source/gl4.d --gen-d-module=gl4 --load-core-4.5  --load-spec
+```

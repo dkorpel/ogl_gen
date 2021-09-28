@@ -1,3 +1,5 @@
+@nogc: nothrow:
+
 alias int64_t = long;
 alias uint64_t = ulong;
 alias int32_t = int;
