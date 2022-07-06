@@ -29,7 +29,7 @@ void gencode_d(OGLFunctionFamily[] functionFamilies, OGLEnumGroup[] enums, strin
 		}
 	} else {
 		prefixContainer = "";
-		prefix = "\t";
+		prefix = "";
 	}
 
 	prefixComment = prefix ~ "/// ";
@@ -101,11 +101,11 @@ Macros:
 				continue;
 
 			ret ~= prefixContainer;
-			ret ~= "\t///\n\t";
+			ret ~= prefix~"///\n"~prefix;
 
 			if (grp.isBitmask) {
 				ret ~= prefixContainer;
-				ret ~= "@Bitmaskable\n\t";
+				ret ~= "@Bitmaskable\n"~prefix;
 			}
 
 			ret ~= prefixContainer;
@@ -119,8 +119,9 @@ Macros:
 					if (i > 0)
 						ret ~= ",\n";
 
-					ret ~= prefix;
-					ret ~= "\t///\n\t";
+					// ret ~= prefix;
+					// ret ~= "\t///\n\t"; // empty ddoc
+					ret ~= "\t";
 
 					ret ~= prefix;
 					if (e.name.length > 3 && e.name[0 .. 3] == "GL_") {
@@ -138,7 +139,7 @@ Macros:
 				}
 			}
 
-			ret ~= "\n\t";
+			ret ~= "\n"~prefix;
 			ret ~= prefixContainer;
 			ret ~= "}\n\n";
 		}
@@ -207,7 +208,8 @@ Macros:
 				ret ~= prefix;
 				ret ~= "alias fn_";
 				ret ~= func.name;
-				ret ~= " = extern(System) ";
+				//ret ~= " = extern(System) ";
+				ret ~= " = "; // done at top level
 				ret ~= func.returnType;
 				ret ~= " function(";
 				ret ~= argsSignature;
@@ -365,14 +367,16 @@ void genDDOC(T)(ref T ret, OGLFunctionFamily family, string prefix) {
 	ret ~= prefix;
 	ret ~= "\n";
 
-	ret ~= prefix;
-	ret ~= "Copyright:\n";
-	ret ~= prefix2;
-	ret.genDDOC(family.familyOfFunction, family.docs_copyright, prefix2, prefix2);
-	if (ret[$ - 1] != '\n')
+	version(none) {
+		ret ~= prefix;
+		ret ~= "Copyright:\n";
+		ret ~= prefix2;
+		ret.genDDOC(family.familyOfFunction, family.docs_copyright, prefix2, prefix2);
+		if (ret[$ - 1] != '\n')
+			ret ~= "\n";
+		ret ~= prefix;
 		ret ~= "\n";
-	ret ~= prefix;
-	ret ~= "\n";
+	}
 
 	ret ~= prefix;
 	ret ~= "See_Also:\n";
@@ -394,16 +398,13 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 		string suffix;
 		string macroPrefix, htmlTag;
 		bool startCodeBlock = false;
+		bool inlineCode = false;
 
 		switch(type) {
 			case OGLDocumentationType.LookupParameter:
-				macroPrefix = "D_INLINECODE";
-				goto case OGLDocumentationType.Container;
 			case OGLDocumentationType.LookupConstant:
-				macroPrefix = "D_INLINECODE";
-				goto case OGLDocumentationType.Container;
 			case OGLDocumentationType.LookupFunction:
-				macroPrefix = "D_INLINECODE";
+				inlineCode = true;
 				goto case OGLDocumentationType.Container;
 			case OGLDocumentationType.Title:
 				htmlTag = "h3";
@@ -529,7 +530,10 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 					ret ~= "\n" ~ linetabs ~ "\n" ~ linetabs;
 
 				size_t preMacroPos = -1;
-				if (startCodeBlock) {
+				if (inlineCode) {
+					preMacroPos = ret.length + 1;
+					ret ~= "`";
+				} else if (startCodeBlock) {
 					ret ~= "---\n" ~ linetabs;
 				} else if (macroPrefix !is null) {
 					preMacroPos = ret.length;
@@ -543,16 +547,27 @@ void genDDOC(T)(ref T ret, string functionFamily, ref OGLDocumentation ctx, stri
 				}
 
 				size_t codePos = ret.length;
-				foreach(i, child; value_children)
+				foreach(i, child; value_children) {
 					ret.genDDOC(functionFamily, child, linetabs, linetabsNext, firstText, startCodeBlock);
-				if (codePos < ret.length && ret[codePos] == ' ' && preMacroPos != -1) {
+				}
+
+				if (inlineCode && codePos < ret.length && ret[codePos] == ' ') {
+					ret[codePos] = '`';
+					ret[codePos-1] = ' ';
+				} else if (codePos < ret.length && ret[codePos] == ' ' && preMacroPos != -1) {
 					// space inside macro, remove space and place it before macro
 					for (size_t i = codePos - 1; i >= preMacroPos; i--)
 						ret[i] = ret[i - 1];
+
 					ret[preMacroPos] = ' ';
 				}
 
-				if (startCodeBlock) {
+				if (inlineCode) {
+					if (ret.length && ret[$ - 1] == '\n')
+						ret [$ - 1] = '`';
+					else
+						ret ~= "`";
+				} else if (startCodeBlock) {
 					if (ret.length >= linetabs.length && ret[$ - linetabs.length .. $] == linetabs)
 						ret ~= "---\n" ~ linetabs;
 					else {

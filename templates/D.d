@@ -1,4 +1,4 @@
-@nogc: nothrow:
+@nogc: nothrow: extern(System):
 
 alias int64_t = long;
 alias uint64_t = ulong;
